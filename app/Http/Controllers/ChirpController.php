@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Chirp;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ChirpController extends Controller
 {
@@ -12,8 +13,12 @@ class ChirpController extends Controller
      */
     public function index()
     {
-        $chirps = Chirp::with('user')->latest()->take(50)->get();
-        return view('home', compact('chirps'));
+        $chirps = Chirp::with('user')
+            ->latest()
+            ->take(50)  // Limit to 50 most recent chirps
+            ->get();
+
+        return view('home', ['chirps' => $chirps]);
     }
 
     /**
@@ -27,16 +32,17 @@ class ChirpController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-
     public function store(Request $request)
     {
         $validated = $request->validate([
             'message' => 'required|string|max:255',
+        ], [
+            'message.required' => 'Please write something to chirp!',
+            'message.max' => 'Chirps must be 255 characters or less.',
         ]);
-    
-        // Use the authenticated user
-        auth()->user()->chirps()->create($validated);
-    
+
+        Auth::user()->chirps()->create($validated);
+
         return redirect('/')->with('success', 'Your chirp has been posted!');
     }
 
@@ -53,8 +59,10 @@ class ChirpController extends Controller
      */
     public function edit(Chirp $chirp)
     {
-        $this->authorize('update', $chirp);
-    
+        if ($chirp->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized');
+        }
+
         return view('chirps.edit', compact('chirp'));
     }
 
@@ -63,14 +71,18 @@ class ChirpController extends Controller
      */
     public function update(Request $request, Chirp $chirp)
     {
-        $this->authorize('update', $chirp);
-    
+        if ($chirp->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized');
+        }
+
+        // Validate
         $validated = $request->validate([
             'message' => 'required|string|max:255',
         ]);
-    
+
+        // Update
         $chirp->update($validated);
-    
+
         return redirect('/')->with('success', 'Chirp updated!');
     }
 
@@ -79,10 +91,12 @@ class ChirpController extends Controller
      */
     public function destroy(Chirp $chirp)
     {
-        $this->authorize('delete', $chirp);
-    
+        if ($chirp->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized');
+        }
+
         $chirp->delete();
-    
+
         return redirect('/')->with('success', 'Chirp deleted!');
     }
 }

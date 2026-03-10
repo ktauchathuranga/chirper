@@ -47,7 +47,7 @@ class User extends Authenticatable
         ];
     }
 
-    public function chrips(): HasMany
+    public function chirps(): HasMany
     {
         return $this->hasMany(Chirp::class);
     }

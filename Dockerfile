@@ -75,6 +75,7 @@ RUN composer dump-autoload --optimize \
 
 # Ensure required storage directories exist & set permissions
 RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs storage/app/public bootstrap/cache \
+    && mkdir -p /var/log/supervisor /var/run/nginx /run/nginx \
     && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
